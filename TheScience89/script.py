@@ -3,7 +3,7 @@ import time
 import random
 from itertools import cycle
 
-file = open("reach.txt","r")
+file = open("reach.txt", "r")
 log = file.read().splitlines()
 file.close
 
@@ -15,41 +15,73 @@ reddit = praw.Reddit(
     password=log[1]
 )
 
-file = open("visited.txt","r")
-visited = file.read().splitlines()
-file.close
+visited = list()
 
-def has_been_visited(authors_name):
-    return authors_name in visited
+def add_parents_author_to_visited(comment_obj):
+    global visited
+    try:
+        visited.append(comment_obj.parent().author.name)
+        return True
+    except:
+        return False
 
-def add_to_visited(authors_name):
-    visited.append(authors_name)
-    file = open("visited.txt","a")
-    file.write(authors_name + "\n")
-    file.close
+def check_comment_karma():
+    global visited
+    print("####################################")
+    print("Comment Removal Starting")
+    visited = list()
+    for comment_obj in reddit.redditor(log[0]).comments.new(limit=None):
+        try:
+            if(comment_obj.score < 1):
+                try:
+                    print("removing a comment with score: " +
+                          str(comment_obj.score))
+                    comment_obj.delete()
+                    continue
+                except:
+                    pass
+            else:
+                if not (add_parents_author_to_visited(comment_obj)):
+                    try:
+                        print("could not add an author")
+                        comment_obj.delete()
+                        continue
+                    except:
+                        pass
+        except:
+            try:
+                print("removing a comment, can't access score")
+                comment_obj.delete()
+                continue
+            except:
+                pass
+    print("####################################")
+    print("Comment Removal Done")
+    print("Comments Made: " + str(len(visited)))
+    print("Users Visited: " + str(len(visited)))
+    print("####################################")
 
-def add_to_comments(comment_id):
-    file = open("comments.txt","a")
-    file.write(str(comment_id) + "\n")
-    file.close
-#"Catswhoyell"
+
+# "Catswhoyell"
 sub_names = ["CatsInBusinessAttire", "CatsonGlass",
              "CatsInSinks", "CatLoaf", "Catswithjobs", "Catswhoyell"
              ]
 
-to_comments = ["In ancient times cats were worshipped as gods; they have not forgotten this.",    
-                "Cats can work out mathematically the exact place to sit that will cause most inconvenience.",
-                "The problem with cats is that they get the same exact look whether they see a moth or an ax-murderer.",
-                "I’m a cat whisperer. When I go to people’s houses, their cats always like me better than the owners.",
-                "Dogs have owners, cats have staff."
+to_comments = ["In ancient times cats were worshipped as gods; they have not forgotten this.",
+               "Cats can work out mathematically the exact place to sit that will cause most inconvenience.",
+               "The problem with cats is that they get the same exact look whether they see a moth or an ax-murderer.",
+               "Dogs have owners, cats have staff."
                ]
 
 pool = cycle(sub_names)
-    
-while True:
 
+subs_visited = 0
+
+while True:
+    if subs_visited % 5 == 0:
+        check_comment_karma()
     sub_found = False
-    
+
     while not sub_found:
         try:
             sub_name = next(pool)
@@ -58,39 +90,30 @@ while True:
         except:
             print("***REMOVE " + sub_name + " from the list***")
             continue
-    
-    print("=========================")
+
     print("Subreddit: " + sub_name)
-    print("total users visited: " + str(len(visited)))
-    print("=========================")
     for submission in subreddit.hot(limit=10):
-        print("-----------------------")
-        print("Submission: " + submission.title[0:15])
         max_comments = 2
         total_commented = 0
         for comment in submission.comments:
             if total_commented >= max_comments:
-                 break
-            #print(comment.body)
+                break
             if not hasattr(comment, "body"):
-                continue   
+                continue
             comment_lower = comment.body.lower()
             if " cat " not in comment_lower:
                 continue
-            if(has_been_visited(comment.author.name)):
+            if(comment.author.name in visited):
                 continue
             try:
                 to_comment = to_comments[random.randint(0, len(to_comments) - 1)]
-                comment_id = comment.reply(to_comment)
-                add_to_comments(comment_id)
+                comment.reply(to_comment)
+                total_commented += 1
             except:
-                print("exception occured, skipping")
                 continue
-            total_commented += 1
-            print("comment total: " + str(total_commented))
-            add_to_visited(comment.author.name)
-            #print("sleeping...")
+            print("waiting...")
             time.sleep(610)
-            #print("searching...")
-    
-    #1print("moving to a new subreddit...")
+    subs_visited += 1
+    #####
+    #####
+    #####
