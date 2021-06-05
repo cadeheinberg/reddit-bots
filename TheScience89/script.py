@@ -33,7 +33,7 @@ def add_to_comments(comment_id):
     file.write(str(comment_id) + "\n")
     file.close
 #"Catswhoyell"
-sub_names = ["Pets", "CatsStandingUp","CatsInBusinessAttire", "CatsonGlass",
+sub_names = ["CatsInBusinessAttire", "CatsonGlass",
              "CatsInSinks", "CatLoaf", "Catswithjobs", "Catswhoyell"
              ]
 
@@ -47,7 +47,6 @@ to_comments = ["In ancient times cats were worshipped as gods; they have not for
 pool = cycle(sub_names)
     
 while True:
-    print("total users visited: " + str(len(visited)))
 
     sub_found = False
     
@@ -62,9 +61,11 @@ while True:
     
     print("=========================")
     print("Subreddit: " + sub_name)
+    print("total users visited: " + str(len(visited)))
     print("=========================")
-    for submission in subreddit.hot(limit=5):
-        #print(submission.title)
+    for submission in subreddit.hot(limit=10):
+        print("-----------------------")
+        print("Submission: " + submission.title[0:15])
         max_comments = 2
         total_commented = 0
         for comment in submission.comments:
@@ -92,4 +93,4 @@ while True:
             time.sleep(610)
             #print("searching...")
     
-    #print("moving to a new subreddit...")
+    #1print("moving to a new subreddit...")
